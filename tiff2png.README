@@ -1,0 +1,79 @@
++----------------------------------------------------------------------+
+| tiff2png - converts a Tagged Image Format File into                  |
+|            a Portable Network Graphics file                          |
+|                                                                      |
+| Copyright (C) 1996 by Willem van Schaik, Singapore                   |
+|                       <gwillem@ntuvax.ntu.ac.sg>                     |
+|                                                                      |
+| version 0.6 - May 1996                                               |
++----------------------------------------------------------------------+
+
+  This is the first attempt for a tiff2png program. Reason to develop
+  it was the lack of conversion possibilities for TIFF files containing
+  alpha channels. 
+
+  Especially NeXT users create lots of TIFF files that have the rather
+  exceptional 2-bit gray and 4-bit color formats, where both can have
+  an alpha channel besides the graphics info. Because PBMplus is not
+  supporting alpha, that path "tifftopnm <file> | pnmtopng > <file>"
+  makes that the alpha and transparency gets lost.
+
+  I have chosen to use PNG formats as similar as possible to the
+  format of the original TIFF file. Thus, palletted TIFF files will be
+  converted into PNG files with color-type 3 (= palletted). Only for
+  some cased the bit-depth had to be altered to accommodate both
+  standards.
+
+  The major decoding and coding work is done by the libtiff, libpng
+  and zlib libraries. So you need to get those as well. For the latter
+  two have a look at:
+	ftp://swrinde.nde.swri.edu/pub/png/src/libpng-*.zip
+	ftp://swrinde.nde.swri.edu/pub/png/src/zlib-*.zip
+
+  For the libtiff library there are two archives. The major with the
+  latest version is:
+	ftp://ftp.sgi.com/graphics/libtiff/tiff-v3.4-tar.gz
+
+  An older (v2.4) but recommendable version (see later) can be found
+  as part of the PBMplus/netpbm package:
+	ftp://ftp.x.org/R5contrib/netpbm-1mar1994.tar.gz
+
+  At this moment the program supports gray-scale images, full-color
+  rgb images as well as paletted ones. This all in 1 to 16 bits. The
+  compression is as good as libtiff is, which is pretty OK. I also
+  implemented support for both single-image-planes as well as
+  separated-color-planes. Support for so-called tiled images I have 
+  left out, for the time being.
+
+  Major headache were the PhotometricInterpretation parameters
+  "min-is-white" and "min-is-black". I couldn't yet figure it out for
+  100%, but I suspect incompatibilities between older (netpbm) version
+  2.4 of libtiff and the latest v3.4. I got best results with the old
+  library, which is therefore included in this archive.
+
+  To build, first make libtiff (cd libtiff ; make). Then look at the
+  Makefile in this directory if the pointers to libpng and zlib are
+  correct. That done, you can make. To test, I provided test-files in
+  the directory ./alpha. The script Alpha.sh will convert all TIFFs
+  (and overwrite the .PNGs at the same time :-). When you have a Web-
+  browser that has adequate alpha support, you can test the result by
+  loading Alpha.html in your browser and check what happens when you 
+  change the background color.
+
+  I tested this utility also against the test-pictures at ftp.sgi.com.
+  With the exception of the tiled-images, with good results. But there
+  can and will still be many TIFF files that don't convert correctly.
+  Please send me a copy if you come across such a beast.
+  
+  For the time being I concentrated on straight forward support of as
+  many formats as possible. Future plans are to create PNG chunks for
+  all those informational fields that TIFF also contains, like Name,
+  Date, Position, Resolution, etc. A somewhat bolder plan is to
+  convert the ColorResponseCurves field into a PNG gamma chunk. Let's
+  see. At this moment there is a command-line parameter to add a
+  gamma-chunk to your PNG file. (Do it please !)
+
+  If you have any feedback for me: gwillem@ntuvax.ntu.ac.sg is the way
+  to go. Or try http://mht3.gintic.ntu.ac.sg:8000/wwwillem.html.
+
++----------------------------------------------------------------------+
