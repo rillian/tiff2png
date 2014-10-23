@@ -287,7 +287,6 @@ tiff2png (tiffname, pngname, verbose, force, interlace_type,
   uch *tiffline;
 
   size_t stripsz;
-  size_t linesz;
   static size_t tilesz = 0L;
   uch *tifftile; /* FAP 20020610 - Add variables to support tiled images */
   ush tiled;
@@ -890,7 +889,6 @@ tiff2png (tiffname, pngname, verbose, force, interlace_type,
         fclose (png);
         return 4;
       }
-      linesz = TIFFScanlineSize(tif);
       stripsz = (tile_width*num_tilesX) * tile_height * spp;
       tiffstrip = (uch*) malloc(stripsz);
       tiffline = tiffstrip; /* just set the line to the top of the strip.
