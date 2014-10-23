@@ -1,0 +1,102 @@
+# MSVC/NMAKE makefile for tiff2png.
+# Greg Roelofs
+# Last modified:  1 July 2002
+#
+# You can invoke this makefile from a DOS-prompt window via:
+#
+#	%devstudio%\vc\bin\vcvars32.bat
+#	nmake -nologo -f Makefile.w32
+#
+# where %devstudio% is the installation directory for MSVC / DevStudio.  If
+# you get "environment out of space" errors, create a desktop shortcut with
+# "c:\windows\command.com /e:4096" as the program command line and set the
+# working directory to this directory.  Then double-click to open the new
+# DOS-prompt window with a bigger environment and retry the commands above.
+# 
+# This makefile assumes zlib, libpng, libtiff and libjpeg have already been
+# built or downloaded and are installed (with the usual public header files)
+# in subdirectories at the same level as the current subdirectory (as indicated
+# by the ZPATH, PNGPATH, etc., macros below).  Edit as appropriate.
+#
+# Note that the names of the dynamic and static libpng and zlib libraries
+# used below may change in later releases of the libraries.  This makefile
+# builds statically linked executables, but that can be changed by uncom-
+# menting the appropriate ZLIB, PNGLIB, etc., lines.  (If you do so, remember
+# that ALL DLLs MUST BE BUILT COMPATIBLY, particularly with respect to the
+# run-time C library.  If you don't know what that means, you should probably
+# stick with static libraries.)
+
+!include <ntwin32.mak>
+
+
+# macros --------------------------------------------------------------------
+
+ZPATH = ../zlib
+ZINC = -I$(ZPATH)
+#ZLIB = $(ZPATH)/zlibdll.lib
+ZLIB = $(ZPATH)/zlibstat.lib
+
+PNGPATH = ../libpng
+PNGINC = -I$(PNGPATH)
+#PNGLIB = $(PNGPATH)/pngdll.lib
+PNGLIB = $(PNGPATH)/libpng.lib
+
+JPEGPATH = ../libjpeg
+JPEGINC = -I$(JPEGPATH)
+#JPEGLIB = $(JPEGPATH)/jpegdll.lib
+JPEGLIB = $(JPEGPATH)/libjpeg.lib
+
+TIFFPATH = ../libtiff
+TIFFINC = -I$(TIFFPATH)
+#TIFFLIB = $(TIFFPATH)/libtiff_i.lib
+TIFFLIB = $(TIFFPATH)/libtiff.lib
+
+INCS = $(TIFFINC) $(JPEGINC) $(PNGINC) $(ZINC)
+LIBS = $(TIFFLIB) $(JPEGLIB) $(PNGLIB) $(ZLIB)
+
+OPTION_FLAGS = -DINVERT_MINISWHITE -DFAXPECT -DDEFAULT_DESTDIR_IS_CURDIR
+
+CC = cl
+LD = link
+RM = del
+CFLAGS = -nologo -O -W3 $(INCS) $(OPTION_FLAGS) $(cvars)
+# [note that -W3 is an MSVC-specific compilation flag ("all warnings on")]
+# [see %devstudio%\vc\include\win32.mak for cvars macro definition]
+O = .obj
+E = .exe
+
+LDFLAGS = -nologo
+
+PROG = tiff2png
+
+OBJS  = $(PROG)$(O)
+
+EXES = $(PROG)$(E)
+
+
+# implicit make rules -------------------------------------------------------
+
+.c$(O):
+	$(CC) -c $(CFLAGS) $<
+
+
+# dependencies --------------------------------------------------------------
+
+all:  $(EXES)
+
+# setargv.obj expands wildcards and is included as part of MSVC; corresponding
+# file for Borland or Watcom compilers may be called "wildargs.obj" or similar
+$(PROG)$(E): $(OBJS)
+	$(LD) $(LDFLAGS) -out:$@ $(OBJS) setargv.obj $(LIBS)
+
+$(PROG)$(O):	$(PROG).c
+
+
+# maintenance ---------------------------------------------------------------
+
+clean:
+#	ideally we could just do this:
+#	$(RM) $(EXES) $(OBJS)
+#	...but the Windows "DEL" command is none too bright, so:
+	$(RM) $(PROG)$(E)
+	$(RM) $(PROG)$(O)
