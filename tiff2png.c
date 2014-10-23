@@ -80,6 +80,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "tiff.h"
 #include "tiffio.h"
