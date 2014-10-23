@@ -89,6 +89,8 @@
 #endif
 #include "png.h"
 
+#include "zlib.h"
+
 #ifdef _MSC_VER   /* works for MSVC 5.0; need finer tuning? */
 #  define strcasecmp _stricmp
 #endif
