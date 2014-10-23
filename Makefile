@@ -1,89 +1,67 @@
 # Makefile for tiff2png
 # Copyright (C) 1996 Willem van Schaik
 
+MODEL=- 
+CFLAGS=-Ox -GA3s -nologo -W3 -I..\zlib
+
+CC=cl
+CLFLAGS=/nologo /MD /GX /O2 /DWIN32 /DNDEBUG /D_WINDOWS /c
+LINK32=link.exe
+LINKFLAGS=/nologo /machine:I386 /incremental:no
+
+O=.obj
+
 #CC=cc
-CC=gcc
-OPTIMFLAGS = -O2 
-DEBUGFLAGS = -g -Wall -W
+#CC=gcc
 #COPY=cp
-COPY=/bin/cp -p
-DEL=/bin/rm -f
-
-# TAKE CARE:  If you use the (very old) libtiff that comes with netpbm, which
-#             is v2.4, you may need to change this to -DOLD_LIBTIFF.  (The
-#             only difference is whether tiffcomp.h is included; it is not
-#             installed by default in newer versions of libtiff, but it may
-#             have been required for older versions.)
-#TIFF_VERSION = -DOLD_LIBTIFF
-TIFF_VERSION =
-
-# It appears that PHOTOMETRIC_MINISWHITE should always be inverted (which
-# makes sense), but if you find a class of TIFFs or a version of libtiff for
-# which that is *not* the case, try not defining INVERT_MINISWHITE:
-#
-#MIN_INVERT =
-MIN_INVERT = -DINVERT_MINISWHITE  
-
+#COPY=/bin/cp -p
+COPY=copy
+#DEL=/bin/rm -f
+DEL=del /f 
 
 # change to match your directories (you see the ./ and ../ ?!?!)
-#LIBTIFF=/usr/lib
-#LIBTIFF=/usr/local/lib
-LIBTIFF=../libtiff/libtiff
-#LIBJPEG=../libgr2/tiff/libtiff
+#LIBTIFF=./libtiff
+# LIBTIFF=/work/graphics/libgr2/tiff/libtiff
 #LIBTIFF=../netpbm/libtiff
-
 # newer libtiffs (can) use libjpeg, too
-#LIBJPEG=/usr/lib
-LIBJPEG=/usr/local/lib
-#LIBJPEG=../libjpeg
-#LIBJPEG=../libgr2/jpeg
+#LIBJPEG=/work/graphics/libgr2/jpeg
+LIBTIFF=..\..\libtiff
 
-#LIBPNG=/usr/lib
-#LIBPNG=/usr/local/lib
 LIBPNG=../libpng
-
+#LIBPNG=/usr/lib
+ZLIB=..\zlib
 #ZLIB=/usr/lib
-#ZLIB=/usr/local/lib
-ZLIB=../zlib
 
-INSTALL=/usr/local
+#INSTALL=/usr/local
+INSTALL=..\exe
 
 # GRR 19990713:  FAXPECT is a custom conversion option for stretched faxes
-CFLAGS=$(TIFF_VERSION) -DFAXPECT $(MIN_INVERT) $(OPTIMFLAGS) $(DEBUGFLAGS) \
-	-I$(LIBTIFF) \
+CFLAGS= \
+	-DFAXPECT \
+	-I. \
+	-I$(LIBTIFF)\inc \
 	-I$(LIBPNG) \
 	-I$(ZLIB)
-LDFLAGS=-L. \
-	-L$(LIBTIFF)/ \
-	-L$(LIBPNG)/ \
-	-L$(ZLIB)/ \
-	-lpng -lz -ltiff -ljpeg -lm
-SLDFLAGS=-L. \
-	$(LIBTIFF)/libtiff.a $(LIBJPEG)/libjpeg.a \
-	$(LIBPNG)/libpng.a \
-	$(ZLIB)/libz.a \
-	-lm
+	
+SLDFLAGS= \
+	$(LIBTIFF)\lib\libtiff.lib \
+	$(LIBPNG)\libpng.lib \
+	$(ZLIB)\zlib.lib
 
-OBJS = tiff2png.o
+OBJS = tiff2png.obj
 
-# default is dynamic only (or mixed dynamic/static, depending on installed libs)
-default: tiff2png
+all: tiff2png.exe
 
-# it's nice to have a choice, though
-all: tiff2png tiff2png-static
+tiff2png.exe : $(OBJS)
+    $(LINK32) @<<
+    $(LINKFLAGS) $(OBJS) $(SLDFLAGS)
+<<
 
-tiff2png: tiff2png.o
-	$(CC) -o tiff2png tiff2png.o $(LDFLAGS)
-
-tiff2png-static: tiff2png.o
-	$(CC) -o tiff2png-static tiff2png.o $(SLDFLAGS)
-
-install: all
-	$(COPY) tiff2png $(INSTALL)/bin
-	$(COPY) tiff2png.1 $(INSTALL)/man/man1
+tiff2png.obj : tiff2png.c
+        cl $(CLFLAGS) $(CFLAGS) tiff2png.c
 
 clean:
-	$(DEL) *.o tiff2png tiff2png-static
+	$(DEL) *.obj tiff2png
 
 # leave this line empty
 

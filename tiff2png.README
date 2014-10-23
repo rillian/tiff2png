@@ -1,11 +1,11 @@
 +----------------------------------------------------------------------+
-| tiff2png - converts a Tagged Image File Format (TIFF) file into      |
-|            a Portable Network Graphics (PNG) file                    |
+| tiff2png - converts a Tagged Image Format File into                  |
+|            a Portable Network Graphics file                          |
 |                                                                      |
-| Copyright 1996 Willem van Schaik, Singapore (willem@schaik.com)      |
-| Copyright 1999-2000 Greg Roelofs (newt@pobox.com)                    |
+| Copyright (C) 1996,2000 by Willem van Schaik, Canada                 |
+|                            <willem@schaik.com>                       |
 |                                                                      |
-| version 0.8 - January 2000 [see GRR NOTES at the end of this file]   |
+| version 0.82 - July 2000                                             |
 +----------------------------------------------------------------------+
 
   This is the first attempt for a tiff2png program. Reason to develop
@@ -19,8 +19,8 @@
   makes that the alpha and transparency gets lost.
 
   I have chosen to use PNG formats as similar as possible to the
-  format of the original TIFF file. Thus, paletted TIFF files will be
-  converted into PNG files with color-type 3 (= paletted). Only for
+  format of the original TIFF file. Thus, palletted TIFF files will be
+  converted into PNG files with color-type 3 (= palletted). Only for
   some cased the bit-depth had to be altered to accommodate both
   standards.
 
@@ -29,31 +29,24 @@
   two have a look at:
 	ftp://swrinde.nde.swri.edu/pub/png/src/libpng-*.zip
 	ftp://swrinde.nde.swri.edu/pub/png/src/zlib-*.zip
-  [GRR: or see http://www.cdrom.com/pub/png/pngcode.html]
 
-  For the libtiff library there are two archives. The major with the
-  latest version is:
-	ftp://ftp.sgi.com/graphics/libtiff/tiff-v3.4-tar.gz
-  [GRR: ftp://ftp.sgi.com/graphics/tiff/tiff-v3.4-tar.gz as of mid-1999]
-  [GRR: http://www.libtiff.org/ as of late 1999]
-
-  An older (v2.4) but recommendable version (see later) can be found
-  as part of the PBMplus/netpbm package:
-	ftp://ftp.x.org/R5contrib/netpbm-1mar1994.tar.gz
-  [GRR: I recommend version 3.5.4 or later from libtiff.org instead]
+  For the libtiff library there are two archives. The major site with
+  the latest version is:
+	ftp://ftp.sgi.com/graphics/libtiff/tiff-v*-tar.gz
 
   At this moment the program supports gray-scale images, full-color
   rgb images as well as paletted ones. This all in 1 to 16 bits. The
-  compression is as good as libtiff is, which is pretty OK. I also
+  compression is as good as libpng is, which is pretty OK. I also
   implemented support for both single-image-planes as well as
   separated-color-planes. Support for so-called tiled images I have 
   left out, for the time being.
 
   Major headache were the PhotometricInterpretation parameters
   "min-is-white" and "min-is-black". I couldn't yet figure it out for
-  100%, but I suspect incompatibilities between older (netpbm) version
-  2.4 of libtiff and the latest v3.4. I got best results with the old
-  library, which is therefore included in this archive.
+  100%, but I suspect incompatibilities between older and newer 
+  versions of libtiff. After a few other attempts, I have solved this
+  by providing a "-invert" option. So if you get for example faxes
+  with white text on a black background, just use -invert.
 
   To build, first make libtiff (cd libtiff ; make). Then look at the
   Makefile in this directory if the pointers to libpng and zlib are
@@ -77,78 +70,14 @@
   see. At this moment there is a command-line parameter to add a
   gamma-chunk to your PNG file. (Do it please !)
 
-  If you have any feedback for me: gwillem@ntuvax.ntu.ac.sg is the way
-  to go. Or try http://mht3.gintic.ntu.ac.sg:8000/wwwillem.html.
-  [GRR:  willem@schaik.com and http://www.schaik.com/ as of 1999]
+  If you have any feedback for me, myself and I: willem@schaik.com is 
+  the way to go. Or try http://www.schaik.com/wwwillem.html.
+
++----------------------------------------------------------------------+
+  History:
+
+  - version 0.82 - fixed 16-bit little-endian encoding
+                 - added -invert option
 
 +----------------------------------------------------------------------+
 
-GRR NOTES:
-
-  I updated tiff2png 0.6 of May 1996 to version 0.7 in July 1999.  My
-  changes include the following:
-
-	- slightly generalized Makefile, including static-library build
-	- updated libpng interface
-	- new libpng error handler (avoids jmp_buf size mismatches between
-	   library and application)
-	- new usage() function
-	- PNG pHYs support (aspect ratio, resolution)
-	- optional new -faxpect option (only if compile with FAXPECT defined)
-
-  The last item is somewhat special-purpose, which is why it's ifdef'd.  At
-  least in my tests with efax 0.9, a Supra fax modem, and the various fax
-  machines to which I have access at work (including all of their "fineness"
-  options), *all* incoming faxes arrive with doubled horizontal resolution.
-  With -faxpect, tiff2png will detect if the aspect ratio is close to 2:1
-  and, if so, halve the horizontal resolution to give a near-1:1 aspect
-  ratio.  The algorithm is trivial:  if both neighboring pixels are white,
-  the result pixel is white; if both black, black; and if there's one of
-  each, the result is mid-level gray (127).  (This necessarily means the
-  output file is 2-bit palette-based, not grayscale, since only 8-bit PNG
-  grayscale includes the mid-level gray, and compression can't recover the
-  factor-of-four increase in pixel depth.)  The results look pretty decent.
-
-  Also note that even libtiff 3.4beta028 needs the OLDTIFF macro defined
-  (see the Makefile comments), at least in all the cases I was able to test.
-  I don't know what the difference is between my system and Willem's.
-
-  Finally, I've removed the (very) old libtiff from the tiff2png 0.7 tar
-  distribution; newer versions are available from the SGI web site mentioned
-  above (ftp://ftp.sgi.com/graphics/tiff/).
-
-Greg Roelofs
-16 September 1999
-newt@pobox.com
-
-+----------------------------------------------------------------------+
-
-MORE GRR NOTES:
-
-  I updated tiff2png 0.7 to version 0.8 in January 2000 and tested it
-  with libpng 3.5.4.  Changes include:
-
-	- improved Makefile (thanks to tenthumbs@cybernex.net)
-	- improved memory/resource management (TIFFClose(), fclose(), etc.)
-	- added -compression option to set zlib compression level
-	- added multi-file support, including -destdir option
-
-  The last item breaks command-line compatibility with earlier versions
-  (which required exactly one TIFF input name and one PNG output name),
-  but it brings tiff2png more in line with gif2png--that is, you can now
-  do "tiff2png *.tif *.tiff" and get the expected conversion of many TIFF
-  files all at once.  (Alternatively, you can do "tiff2png -destdir /here
-  /there/*.tif" to convert TIFFs /there to PNGs /here.  The destination
-  directory must exist and be writable, of course.)  The program replaces
-  the ".tif" or ".tiff" extension with ".png"; if neither extension is
-  found, ".png" is simply appended to the TIFF filename.
-
-  Oh, and I also took the liberty of changing the capitalization to
-  "tiff2png"; not only does that match both the actual binary name and
-  gif2png's convention, it also seemed more logical.  (That is, "TIFF"
-  is an acronym; either all letters should be capitalized or none of them
-  should be.  Ditto for PNG.)
-
-Greg Roelofs
-26 January 2000
-newt@pobox.com
