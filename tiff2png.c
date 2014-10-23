@@ -820,7 +820,7 @@ tiff2png (tiffname, pngname, verbose, force, interlace_type,
     res_x = res_x_half;
     if (verbose)
     {
-      fprintf (stderr, "tiff2png:  new width = %lu pixels\n", width);
+      fprintf (stderr, "tiff2png:  new width = %u pixels\n", width);
       fprintf (stderr, "tiff2png:  new color type = paletted\n");
       fprintf (stderr, "tiff2png:  new bit depth = %d\n", bit_depth);
     }
