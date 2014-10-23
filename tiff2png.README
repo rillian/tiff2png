@@ -2,10 +2,10 @@
 | tiff2png - converts a Tagged Image File Format (TIFF) file into      |
 |            a Portable Network Graphics (PNG) file                    |
 |                                                                      |
-| Copyright (C) 1996 by Willem van Schaik, Singapore                   |
-|                       <gwillem@ntuvax.ntu.ac.sg>                     |
+| Copyright 1996 Willem van Schaik, Singapore (willem@schaik.com)      |
+| Copyright 1999-2000 Greg Roelofs (newt@pobox.com)                    |
 |                                                                      |
-| version 0.7 - September 1999 [see GRR NOTES at the end of this file] |
+| version 0.8 - January 2000 [see GRR NOTES at the end of this file]   |
 +----------------------------------------------------------------------+
 
   This is the first attempt for a tiff2png program. Reason to develop
@@ -19,8 +19,8 @@
   makes that the alpha and transparency gets lost.
 
   I have chosen to use PNG formats as similar as possible to the
-  format of the original TIFF file. Thus, palletted TIFF files will be
-  converted into PNG files with color-type 3 (= palletted). Only for
+  format of the original TIFF file. Thus, paletted TIFF files will be
+  converted into PNG files with color-type 3 (= paletted). Only for
   some cased the bit-depth had to be altered to accommodate both
   standards.
 
@@ -35,10 +35,12 @@
   latest version is:
 	ftp://ftp.sgi.com/graphics/libtiff/tiff-v3.4-tar.gz
   [GRR: ftp://ftp.sgi.com/graphics/tiff/tiff-v3.4-tar.gz as of mid-1999]
+  [GRR: http://www.libtiff.org/ as of late 1999]
 
   An older (v2.4) but recommendable version (see later) can be found
   as part of the PBMplus/netpbm package:
 	ftp://ftp.x.org/R5contrib/netpbm-1mar1994.tar.gz
+  [GRR: I recommend version 3.5.4 or later from libtiff.org instead]
 
   At this moment the program supports gray-scale images, full-color
   rgb images as well as paletted ones. This all in 1 to 16 bits. The
@@ -117,4 +119,36 @@ GRR NOTES:
 
 Greg Roelofs
 16 September 1999
+newt@pobox.com
+
++----------------------------------------------------------------------+
+
+MORE GRR NOTES:
+
+  I updated tiff2png 0.7 to version 0.8 in January 2000 and tested it
+  with libpng 3.5.4.  Changes include:
+
+	- improved Makefile (thanks to tenthumbs@cybernex.net)
+	- improved memory/resource management (TIFFClose(), fclose(), etc.)
+	- added -compression option to set zlib compression level
+	- added multi-file support, including -destdir option
+
+  The last item breaks command-line compatibility with earlier versions
+  (which required exactly one TIFF input name and one PNG output name),
+  but it brings tiff2png more in line with gif2png--that is, you can now
+  do "tiff2png *.tif *.tiff" and get the expected conversion of many TIFF
+  files all at once.  (Alternatively, you can do "tiff2png -destdir /here
+  /there/*.tif" to convert TIFFs /there to PNGs /here.  The destination
+  directory must exist and be writable, of course.)  The program replaces
+  the ".tif" or ".tiff" extension with ".png"; if neither extension is
+  found, ".png" is simply appended to the TIFF filename.
+
+  Oh, and I also took the liberty of changing the capitalization to
+  "tiff2png"; not only does that match both the actual binary name and
+  gif2png's convention, it also seemed more logical.  (That is, "TIFF"
+  is an acronym; either all letters should be capitalized or none of them
+  should be.  Ditto for PNG.)
+
+Greg Roelofs
+26 January 2000
 newt@pobox.com

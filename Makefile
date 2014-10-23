@@ -3,36 +3,53 @@
 
 #CC=cc
 CC=gcc
+OPTIMFLAGS = -O2 
+DEBUGFLAGS = -g -Wall -W
 #COPY=cp
 COPY=/bin/cp -p
 DEL=/bin/rm -f
 
-# TAKE CARE: If you use libtiff version v3.4, please use -DNEW_LIBTIFF, for
-#            the libtiff that comes with netpbm, which is v2.4, you must
-#            change this to -DOLD_LIBTIFF. For other versions I don't know.
-#            Reason is that v3.4 does automatic flipping when MINISWHITE.
-# GRR 19990713:  This does not seem to be true for 3.4beta028; it still
-#            requires OLD_LIBTIFF to be defined or else fax pages (1-bit)
-#            come out mostly black.
-TIFF_VERSION = -DOLD_LIBTIFF
-#TIFF_VERSION = -DNEW_LIBTIFF
+# TAKE CARE:  If you use the (very old) libtiff that comes with netpbm, which
+#             is v2.4, you may need to change this to -DOLD_LIBTIFF.  (The
+#             only difference is whether tiffcomp.h is included; it is not
+#             installed by default in newer versions of libtiff, but it may
+#             have been required for older versions.)
+#TIFF_VERSION = -DOLD_LIBTIFF
+TIFF_VERSION =
+
+# It appears that PHOTOMETRIC_MINISWHITE should always be inverted (which
+# makes sense), but if you find a class of TIFFs or a version of libtiff for
+# which that is *not* the case, try not defining INVERT_MINISWHITE:
+#
+#MIN_INVERT =
+MIN_INVERT = -DINVERT_MINISWHITE  
+
 
 # change to match your directories (you see the ./ and ../ ?!?!)
-#LIBTIFF=./libtiff
-LIBTIFF=/work/graphics/libgr2/tiff/libtiff
+#LIBTIFF=/usr/lib
+#LIBTIFF=/usr/local/lib
+LIBTIFF=../libtiff/libtiff
+#LIBJPEG=../libgr2/tiff/libtiff
 #LIBTIFF=../netpbm/libtiff
-# newer libtiffs (can) use libjpeg, too
-LIBJPEG=/work/graphics/libgr2/jpeg
 
-#LIBPNG=../libpng
-LIBPNG=/usr/lib
-#ZLIB=../zlib
-ZLIB=/usr/lib
+# newer libtiffs (can) use libjpeg, too
+#LIBJPEG=/usr/lib
+LIBJPEG=/usr/local/lib
+#LIBJPEG=../libjpeg
+#LIBJPEG=../libgr2/jpeg
+
+#LIBPNG=/usr/lib
+#LIBPNG=/usr/local/lib
+LIBPNG=../libpng
+
+#ZLIB=/usr/lib
+#ZLIB=/usr/local/lib
+ZLIB=../zlib
 
 INSTALL=/usr/local
 
 # GRR 19990713:  FAXPECT is a custom conversion option for stretched faxes
-CFLAGS=$(TIFF_VERSION) -DFAXPECT -L. \
+CFLAGS=$(TIFF_VERSION) -DFAXPECT $(MIN_INVERT) $(OPTIMFLAGS) $(DEBUGFLAGS) \
 	-I$(LIBTIFF) \
 	-I$(LIBPNG) \
 	-I$(ZLIB)
@@ -40,7 +57,7 @@ LDFLAGS=-L. \
 	-L$(LIBTIFF)/ \
 	-L$(LIBPNG)/ \
 	-L$(ZLIB)/ \
-	-lpng -lz -ltiff -lm
+	-lpng -lz -ltiff -ljpeg -lm
 SLDFLAGS=-L. \
 	$(LIBTIFF)/libtiff.a $(LIBJPEG)/libjpeg.a \
 	$(LIBPNG)/libpng.a \
@@ -49,6 +66,10 @@ SLDFLAGS=-L. \
 
 OBJS = tiff2png.o
 
+# default is dynamic only (or mixed dynamic/static, depending on installed libs)
+default: tiff2png
+
+# it's nice to have a choice, though
 all: tiff2png tiff2png-static
 
 tiff2png: tiff2png.o
@@ -62,7 +83,7 @@ install: all
 	$(COPY) tiff2png.1 $(INSTALL)/man/man1
 
 clean:
-	$(DEL) *.o tiff2png
+	$(DEL) *.o tiff2png tiff2png-static
 
 # leave this line empty
 
