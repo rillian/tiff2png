@@ -4,7 +4,7 @@
 ** Copyright (C) 1996 by Willem van Schaik, Singapore
 **                       <gwillem@ntuvax.ntu.ac.sg>
 **
-** version 0.6 - May 1996
+** [see VERSION macro below for version and date]
 **
 ** Lots of material was stolen from libtiff, tifftopnm, pnmtopng, which
 ** programs had also done a fair amount of "borrowing", so the credit for
@@ -14,6 +14,9 @@
 **         Alexander Lehmann
 **         Patrick Naughton
 **         Marcel Wijkstra
+**
+** usage(), pHYs support, error handler, updated libpng code, -faxpect option
+**   by Greg Roelofs (newt@pobox.com), July/September 1999
 **
 ** Permission to use, copy, modify, and distribute this software and its
 ** documentation for any purpose and without fee is hereby granted,
@@ -28,23 +31,30 @@
 ** other special, indirect and consequential damages.
 */
 
+#define VERSION "0.7 of 16 September 1999"
+
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "tiff.h"
 #include "tiffio.h"
 #include "tiffcomp.h"
 #include "png.h"
 
 #ifndef TRUE
-#define TRUE 1
+#  define TRUE 1
 #endif
 #ifndef FALSE
-#define FALSE 0
+#  define FALSE 0
 #endif
 #ifndef NONE
-#define NONE 0
+#  define NONE 0
 #endif
+
 #define MAXCOLORS 256
+
 #ifndef PHOTOMETRIC_DEPTH
-#define PHOTOMETRIC_DEPTH 32768
+#  define PHOTOMETRIC_DEPTH 32768
 #endif
 
 /*
@@ -54,11 +64,13 @@ typedef	unsigned int u_int;
 typedef	unsigned long u_long;
 */
 
-static int verbose = FALSE;
-static int interlace = FALSE;
-static float gamma = -1.0;
+typedef struct _jmpbuf_wrapper {
+  jmp_buf jmpbuf;
+} jmpbuf_wrapper;
 
-/* macro's to get and put bit's out of the bytes */
+static jmpbuf_wrapper tiff2png_jmpbuf_struct;
+
+/* macros to get and put bits out of the bytes */
 
 #define GET_LINE \
   { \
@@ -93,6 +105,81 @@ static float gamma = -1.0;
 
 /*----------------------------------------------------------------------------*/
 
+static void usage (rc)
+  int rc;
+{
+  char *pTIFFver;
+  int len;
+
+  fprintf (stderr, "Tiff2png version %s.\n", VERSION);
+
+  /* this function returns a huge, three-line version+copyright string */
+  pTIFFver = (char *)TIFFGetVersion();
+  if (strncmp(pTIFFver, "LIBTIFF, Version ", 17) == 0)
+  {
+    char *p, *q;
+
+    p = pTIFFver + 17;
+    q = strchr(p, '\n');
+    if (q && (len = (q-p)) < 15)   /* arbitrary (short) limit */
+      fprintf (stderr, "   Compiled with libtiff %.*s.\n", len, p);
+  }
+  fprintf(stderr, "   Compiled with libpng %s; using libpng %s.\n",
+    PNG_LIBPNG_VER_STRING, png_libpng_ver);
+  fprintf(stderr, "   Compiled with zlib %s; using zlib %s.\n\n",
+    ZLIB_VERSION, zlib_version);
+
+  fprintf (stderr,
+ "Usage: tiff2png [-verbose] [-gamma val] [-interlace] <tiff-file> <png-file>\n"
+    );
+
+  fprintf (stderr,
+    "\nReads <tiff-file>, converts to PNG format, and writes <png-file>.\n");
+  fprintf (stderr,
+    "   -gamma option writes PNG with specified gamma value (e.g., 0.45455)\n");
+  fprintf (stderr,
+    "   -interlace option writes interlaced PNG\n");
+#ifdef FAXPECT
+  fprintf (stderr,
+    "   -faxpect option converts 2:1 aspect-ratio faxes to square pixels\n");
+#endif
+
+  exit (rc);
+}
+
+/*----------------------------------------------------------------------------*/
+
+static void tiff2png_error_handler (png_ptr, msg)
+  png_structp png_ptr;
+  png_const_charp msg;
+{
+  jmpbuf_wrapper  *jmpbuf_ptr;
+
+  /* this function, aside from the extra step of retrieving the "error
+   * pointer" (below) and the fact that it exists within the application
+   * rather than within libpng, is essentially identical to libpng's
+   * default error handler.  The second point is critical:  since both
+   * setjmp() and longjmp() are called from the same code, they are
+   * guaranteed to have compatible notions of how big a jmp_buf is,
+   * regardless of whether _BSD_SOURCE or anything else has (or has not)
+   * been defined. */
+
+  fprintf(stderr, "Tiff2png:  fatal libpng error: %s\n", msg);
+  fflush(stderr);
+
+  jmpbuf_ptr = png_get_error_ptr(png_ptr);
+  if (jmpbuf_ptr == NULL) {         /* we are completely hosed now */
+    fprintf(stderr,
+      "Tiff2png:  EXTREMELY fatal error: jmpbuf unrecoverable; terminating.\n");
+    fflush(stderr);
+    exit(99);
+  }
+
+  longjmp(jmpbuf_ptr->jmpbuf, 1);
+}
+
+/*----------------------------------------------------------------------------*/
+
 int
 main (argc, argv)
   int argc;
@@ -100,7 +187,10 @@ main (argc, argv)
 
 {
   int argn;
-  char* usage = "tiff2png [-verbose] [-gamma] [-interlace] <tiff-file> <png-file>";
+  int verbose = FALSE;
+#ifdef FAXPECT
+  int faxpect = FALSE;
+#endif
 
   register TIFF* tif;
   char name [256];
@@ -108,7 +198,7 @@ main (argc, argv)
   u_short photometric;
   int maxval;
   int colors;
-  int cols, rows;
+  int halfcols, cols, rows;
   int row;
   register int col;
   u_char* tiffstrip;
@@ -120,17 +210,27 @@ main (argc, argv)
   register int getbitsleft;
   register int putbitsleft;
 
+  float xres, yres, ratio;			/* TIFF */
+  png_uint_32 res_x_half, res_x, res_y;		/* PNG */
+  int unit_type;
+  int have_res = FALSE;
+
   unsigned short* redcolormap;
   unsigned short* greencolormap;
   unsigned short* bluecolormap;
 
   FILE *png;
-  FILE *fopen();
   png_struct *png_ptr;
   png_info *info_ptr;
   png_byte *pngline;
   png_byte *p_png;
   png_color palette[MAXCOLORS];
+  png_uint_32 width;
+  float gamma = -1.0;
+  int bit_depth = 0;
+  int color_type = -1;
+  int tiff_color_type;
+  int interlace_type = PNG_INTERLACE_NONE;
   int pass;
 
   long i, j, b, n, s;
@@ -153,10 +253,7 @@ main (argc, argv)
   while (argn < argc && argv[argn][0] == '-' && argv[argn][1] != '\0')
   {
     if (strncmp (argv[argn], "-help", 2) == 0)
-    {
-      fprintf (stderr, "Usage: %s\n", usage);
-      exit (0);
-    }
+      usage (0);
     else if (strncmp (argv[argn], "-verbose", 2) == 0)
       verbose = TRUE;
     else if (strncmp (argv[argn], "-gamma", 2) == 0)
@@ -164,18 +261,16 @@ main (argc, argv)
       if (++argn < argc)
 	sscanf (argv[argn], "%f", &gamma);
       else
-      {
-	fprintf (stderr, "Usage: %s\n", usage);
-	exit (1);
-      }
+	usage (1);
     }
     else if (strncmp (argv[argn], "-interlace", 2) == 0)
-      interlace = TRUE;
+      interlace_type = PNG_INTERLACE_ADAM7;
+#ifdef FAXPECT
+    else if (strncmp (argv[argn], "-faxpect", 2) == 0)
+      faxpect = TRUE;
+#endif
     else
-    {
-      fprintf (stderr, "Usage: %s\n", usage);
-      exit (1);
-    }
+      usage (1);
     argn++;
   }
 
@@ -193,32 +288,23 @@ main (argc, argv)
     argn++;
   }
   else
-  {
-    fprintf (stderr,  "Usage: %s\n", usage);
-    exit (1);
-  }
+    usage (1);
 
   if (argn != argc)
   {
     png = fopen (argv[argn], "wb");
     if (png == NULL)
     {
-      fprintf (stderr, "Error: PNG file %s can not be created\n", argv[argn]);
+      fprintf (stderr, "Error: PNG file %s cannot be created\n", argv[argn]);
       exit (1);
     }
     argn++;
   }
   else
-  {
-    fprintf (stderr,  "Usage: %s\n", usage);
-    exit (1);
-  }
+    usage (1);
 
   if (argn != argc)
-  {
-    fprintf (stderr,  "Usage: %s\n", usage);
-    exit (1);
-  }
+    usage (1);
 
   /* get TIFF header info */
 
@@ -239,6 +325,71 @@ main (argc, argv)
 
   (void) TIFFGetField (tif, TIFFTAG_IMAGEWIDTH, &cols);
   (void) TIFFGetField (tif, TIFFTAG_IMAGELENGTH, &rows);
+  width = cols;
+
+  if (TIFFGetField (tif, TIFFTAG_XRESOLUTION, &xres) &&
+      TIFFGetField (tif, TIFFTAG_YRESOLUTION, &yres) &&  /* no default value */
+      (xres != 0.0) && (yres != 0.0))
+  {
+    uint16 resunit;   /* typedef'd in tiff.h */
+
+    have_res = TRUE;
+    ratio = xres / yres;
+    if (verbose)
+    {
+      fprintf (stderr, "Tiff2png: aspect ratio (hor/vert) = %g (%g / %g)\n",
+        ratio, xres, yres);
+      if (0.95 < ratio && ratio < 1.05)
+        fprintf (stderr, "Tiff2png: near-unity aspect ratio\n");
+      else if (1.90 < ratio && ratio < 2.10)
+        fprintf (stderr, "Tiff2png: near-2X aspect ratio\n");
+      else
+        fprintf (stderr, "Tiff2png: non-square, non-2X pixels\n");
+    }
+
+#if 0
+    /* GRR: this should be fine and works sometimes, but occasionally it
+     *  seems to cause a segfault--which may be more related to Linux 2.2.10
+     *  and/or SMP and/or heavy CPU loading.  Disabled for now. */
+    (void) TIFFGetFieldDefaulted (tif, TIFFTAG_RESOLUTIONUNIT, &resunit);
+#else
+    if (! TIFFGetField (tif, TIFFTAG_RESOLUTIONUNIT, &resunit))
+      resunit = RESUNIT_INCH;  /* default (see libtiff tif_dir.c) */
+#endif
+
+    /* convert from TIFF data (floats) to PNG data (unsigned longs) */
+    switch (resunit)
+    {
+      case RESUNIT_CENTIMETER:
+        res_x_half = (png_uint_32)(50.0*xres + 0.5);
+        res_x = (png_uint_32)(100.0*xres + 0.5);
+        res_y = (png_uint_32)(100.0*yres + 0.5);
+        unit_type = PNG_RESOLUTION_METER;
+        break;
+      case RESUNIT_INCH:
+        res_x_half = (png_uint_32)(0.5*39.37*xres + 0.5);
+        res_x = (png_uint_32)(39.37*xres + 0.5);
+        res_y = (png_uint_32)(39.37*yres + 0.5);
+        unit_type = PNG_RESOLUTION_METER;
+        break;
+/*    case RESUNIT_NONE:   */
+      default:
+        res_x_half = (png_uint_32)(50.0*xres + 0.5);
+        res_x = (png_uint_32)(100.0*xres + 0.5);
+        res_y = (png_uint_32)(100.0*yres + 0.5);
+        unit_type = PNG_RESOLUTION_UNKNOWN;
+        break;
+    }
+  }
+
+#ifdef FAXPECT
+  if (faxpect && (!have_res || ratio < 1.90 || ratio > 2.10))
+  {
+    fprintf (stderr,
+      "Tiff2png: aspect ratio is out of range: skipping -faxpect conversion\n");
+    faxpect = FALSE;
+  }
+#endif
 
   if (verbose)
   {
@@ -248,26 +399,31 @@ main (argc, argv)
 
   /* start PNG preparation */
 
-  png_ptr = (png_struct *)malloc (sizeof (png_struct));
-  info_ptr = (png_info *)malloc (sizeof (png_info));
-
-  if (png_ptr == NULL || info_ptr == NULL)
-    fprintf (stderr, "Error: cannot allocate PNGLIB structures\n");
-
-  if (setjmp (png_ptr->jmpbuf))
+  png_ptr = png_create_write_struct (PNG_LIBPNG_VER_STRING,
+    &tiff2png_jmpbuf_struct, tiff2png_error_handler, NULL);
+  if (!png_ptr)
   {
-    png_write_destroy (png_ptr);
-    free (png_ptr);
-    free (info_ptr);
-    fprintf (stderr, "Error: setjmp returns error condition\n");
+    fprintf (stderr, "Tiff2png error: cannot allocate libpng main struct\n");
+    exit (4);
+  }
+
+  info_ptr = png_create_info_struct(png_ptr);
+  if (!info_ptr)
+  {
+    fprintf (stderr, "Tiff2png error: cannot allocate libpng info struct\n");
+    png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+    exit (4);
+  }
+
+  if (setjmp (tiff2png_jmpbuf_struct.jmpbuf))
+  {
+    fprintf (stderr, "Tiff2png error: setjmp returns error condition\n");
+    png_destroy_write_struct (&png_ptr, &info_ptr);
+    fclose (png);
     exit (1);
   }
 
-  png_write_init (png_ptr);
-  png_info_init (info_ptr);
   png_init_io (png_ptr, png);
-  info_ptr->width = cols;
-  info_ptr->height = rows;
 
   /* detect tiff filetype */
 
@@ -286,32 +442,33 @@ main (argc, argv)
 	  fprintf (stderr, "Tiff2png: %d graylevels (min=white)\n", maxval + 1);
       if (spp == 1) /* no alpha */
       {
-	info_ptr->color_type = PNG_COLOR_TYPE_GRAY;
+	color_type = PNG_COLOR_TYPE_GRAY;
 	if (verbose)
 	  fprintf (stderr, "Tiff2png: color-type = grayscale\n");
-	info_ptr->bit_depth = bps;
+	bit_depth = bps;
       }
       else /* must be alpha */
       {
-	info_ptr->color_type = PNG_COLOR_TYPE_GRAY_ALPHA;
+	color_type = PNG_COLOR_TYPE_GRAY_ALPHA;
 	if (verbose)
 	  fprintf (stderr, "Tiff2png: color-type = grayscale + alpha\n");
 	if (bps <= 8)
-	  info_ptr->bit_depth = 8;
+	  bit_depth = 8;
 	else
-	  info_ptr->bit_depth = bps;
+	  bit_depth = bps;
       }
       break;
 
     case PHOTOMETRIC_PALETTE:
     {
-      info_ptr->color_type = PNG_COLOR_TYPE_PALETTE;
+      color_type = PNG_COLOR_TYPE_PALETTE;
       if (verbose)
 	fprintf (stderr, "Tiff2png: color-type = paletted\n");
 
-      if (! TIFFGetField (tif, TIFFTAG_COLORMAP, &redcolormap, &greencolormap, &bluecolormap))
+      if (! TIFFGetField (tif, TIFFTAG_COLORMAP, &redcolormap, &greencolormap,
+          &bluecolormap))
       {
-	fprintf (stderr, "Error: can not retrieve colormaps\n");
+	fprintf (stderr, "Error: cannot retrieve TIFF colormaps\n");
 	exit (1);
       }
       colors = maxval + 1;
@@ -322,41 +479,38 @@ main (argc, argv)
       }
       /* max PNG palette-size is 8 bits, you could convert to full-color */
       if (bps >= 8) 
-	info_ptr->bit_depth = 8;
+	bit_depth = 8;
       else
-	info_ptr->bit_depth = bps;
+	bit_depth = bps;
 
       /* PLTE chunk */
-      /* tiff-palettes contain 16-bit shorts, while png-palettes are 8-bit) */
+      /* TIFF palettes contain 16-bit shorts, while PNG palettes are 8-bit) */
       for (i = 0 ; i < colors ; i++)
       {
 	palette[i].red   = (png_byte) (redcolormap[i] >> 8);
 	palette[i].green = (png_byte) (greencolormap[i] >> 8);
 	palette[i].blue  = (png_byte) (bluecolormap[i] >> 8);
       }
-      info_ptr->valid |= PNG_INFO_PLTE;
-      info_ptr->palette = palette;
-      info_ptr->num_palette = colors;
       break;
     }
 
     case PHOTOMETRIC_RGB:
       if (spp == 3)
       {
-	info_ptr->color_type = PNG_COLOR_TYPE_RGB;
+	color_type = PNG_COLOR_TYPE_RGB;
 	if (verbose)
 	  fprintf (stderr, "Tiff2png: color-type = truecolor\n");
       }
       else
       {
-	info_ptr->color_type = PNG_COLOR_TYPE_RGB_ALPHA;
+	color_type = PNG_COLOR_TYPE_RGB_ALPHA;
 	if (verbose)
 	  fprintf (stderr, "Tiff2png: color-type = truecolor + alpha\n");
       }
       if (bps <= 8)
-	info_ptr->bit_depth = 8;
+	bit_depth = 8;
       else
-	info_ptr->bit_depth = bps;
+	bit_depth = bps;
       break;
 
     case PHOTOMETRIC_MASK:
@@ -377,22 +531,58 @@ main (argc, argv)
       exit (1);
     }
   }
+  tiff_color_type = color_type;
 
   if (verbose)
-    fprintf (stderr, "Tiff2png: bit-depth = %d\n", info_ptr->bit_depth);
+    fprintf (stderr, "Tiff2png: bit-depth = %d\n", bit_depth);
+
+#ifdef FAXPECT
+  if (faxpect && (color_type != PNG_COLOR_TYPE_GRAY || bit_depth != 1))
+  {
+    fprintf (stderr,
+      "Tiff2png: only B&W (1-bit grayscale) images supported for -faxpect\n");
+    faxpect = FALSE;
+  }
+  /* reduce width of fax by 2X by converting 1-bit grayscale to 2-bit, 3-color
+   * palette */
+  if (faxpect)
+  {
+    width = halfcols = cols / 2;
+    color_type = PNG_COLOR_TYPE_PALETTE;
+    palette[0].red = palette[0].green = palette[0].blue = 0;	/* both 0 */
+    palette[1].red = palette[1].green = palette[1].blue = 127;	/* 0,1 or 1,0 */
+    palette[2].red = palette[2].green = palette[2].blue = 255;	/* both 1 */
+    colors = 3;
+    bit_depth = 2;
+    res_x = res_x_half;
+    if (verbose)
+    {
+      fprintf (stderr, "Tiff2png: new width = %lu pixels\n", width);
+      fprintf (stderr, "Tiff2png: new color-type = paletted\n");
+      fprintf (stderr, "Tiff2png: new bit-depth = %d\n", bit_depth);
+    }
+  }
+#endif
 
   /* put parameter info in png-chunks */
 
-  info_ptr->interlace_type = interlace;
+  png_set_IHDR(png_ptr, info_ptr, width, rows, bit_depth, color_type,
+    interlace_type, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+  if (color_type == PNG_COLOR_TYPE_PALETTE)
+    png_set_PLTE(png_ptr, info_ptr, palette, colors);
 
   /* gAMA chunk */
   if (gamma != -1.0)
   {
-    info_ptr->valid |= PNG_INFO_gAMA;
-    info_ptr->gamma = gamma;
     if (verbose)
-      fprintf (stderr, "Tiff2png: gamma=%f\n", gamma);
+      fprintf (stderr, "Tiff2png: gamma = %f\n", gamma);
+    png_set_gAMA(png_ptr, info_ptr, gamma);
   }
+
+  /* pHYs chunk */
+  if (have_res)
+    png_set_pHYs (png_ptr, info_ptr, res_x, res_y, unit_type);
 
   png_write_info (png_ptr, info_ptr);
   png_set_packing (png_ptr);
@@ -475,53 +665,66 @@ main (argc, argv)
 
       /* convert from tiff-line to png-line */
 
-      switch (info_ptr->color_type)
+      switch (tiff_color_type)
       {
-        case PNG_COLOR_TYPE_GRAY:
-	  for (col = 0; col < cols; col++)
+        case PNG_COLOR_TYPE_GRAY:		/* we know spp == 1 */
+	  for (col = cols; col > 0; --col)
 	  {
-            for (i = 0 ; i < spp ; i++)
-            {
-              switch (bps)
-	      {
-                case 16:
+            switch (bps)
+	    {
+              case 16:
 #ifdef OLD_LIBTIFF
-		  if (photometric == PHOTOMETRIC_MINISWHITE)
-		  {
-		    GET_LINE
-		    sample16 = sample;
-		    sample16 <<= 8;
-		    GET_LINE
-		    sample16 |= sample;
-		    sample16 = maxval - sample16;
-		    *p_png++ = (u_char)((sample16 >> 8) & 0x0F);
-	  	    *p_png++ = (u_char)(sample16 & 0x0F);
-		  }
-		  else
-#endif
-		  {
-		    GET_LINE
-		    *p_png++ = sample;
-		    GET_LINE
-		    *p_png++ = sample;
-		  }
-		  break;
-
-                case 8:
-                case 4:
-                case 2:
-                case 1:
+		if (photometric == PHOTOMETRIC_MINISWHITE)
+		{
 		  GET_LINE
-#ifdef OLD_LIBTIFF
-		  if (photometric == PHOTOMETRIC_MINISWHITE)
-		    sample = maxval - sample;
+		  sample16 = sample;
+		  sample16 <<= 8;
+		  GET_LINE
+		  sample16 |= sample;
+		  sample16 = maxval - sample16;
+		  *p_png++ = (u_char)((sample16 >> 8) & 0x0F);
+	  	  *p_png++ = (u_char)(sample16 & 0x0F);
+		}
+		else
 #endif
-	          *p_png++ = sample;
-		  break;
+		{
+		  GET_LINE
+		  *p_png++ = sample;
+		  GET_LINE
+		  *p_png++ = sample;
+		}
+		break;
 
-              } /* end switch */
-            }
+              case 8:
+              case 4:
+              case 2:
+              case 1:
+		GET_LINE
+#ifdef OLD_LIBTIFF
+		if (photometric == PHOTOMETRIC_MINISWHITE)
+		  sample = maxval - sample;
+#endif
+	        *p_png++ = sample;
+		break;
+
+            } /* end switch */
 	  }
+#ifdef FAXPECT
+          /* note that this actually converts 1-bit grayscale to 2-bit indexed
+           * data, where 0 = black, 1 = half-gray (127), and 2 = white */
+          if (faxpect)
+          {
+	    png_byte *p_png2;
+
+	    p_png = pngline;
+	    p_png2 = pngline;
+	    for (col = halfcols; col > 0; --col)
+            {
+	      *p_png++ = *p_png2 + p_png2[1];
+	      p_png2 += 2;
+            }
+          }
+#endif
 	  break;
 
         case PNG_COLOR_TYPE_GRAY_ALPHA:
@@ -616,6 +819,8 @@ main (argc, argv)
 	          *p_png++ = sample;
 		  break;
 
+                /* GRR:  THESE THREE CASES CANNOT HAPPEN: */
+
                 case 4:
 		  GET_LINE
 	          *p_png++ = sample * 16;
@@ -657,12 +862,9 @@ main (argc, argv)
   } /* for pass */
 
   png_write_end (png_ptr, info_ptr);
-  png_write_destroy (png_ptr);
+  fclose (png);
 
-  free (png_ptr);
-  free (info_ptr);
+  png_destroy_write_struct (&png_ptr, &info_ptr);
 
-  close (png);
   exit (0);
 }
-

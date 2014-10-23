@@ -1,11 +1,11 @@
 +----------------------------------------------------------------------+
-| tiff2png - converts a Tagged Image Format File into                  |
-|            a Portable Network Graphics file                          |
+| tiff2png - converts a Tagged Image File Format (TIFF) file into      |
+|            a Portable Network Graphics (PNG) file                    |
 |                                                                      |
 | Copyright (C) 1996 by Willem van Schaik, Singapore                   |
 |                       <gwillem@ntuvax.ntu.ac.sg>                     |
 |                                                                      |
-| version 0.6 - May 1996                                               |
+| version 0.7 - September 1999 [see GRR NOTES at the end of this file] |
 +----------------------------------------------------------------------+
 
   This is the first attempt for a tiff2png program. Reason to develop
@@ -29,10 +29,12 @@
   two have a look at:
 	ftp://swrinde.nde.swri.edu/pub/png/src/libpng-*.zip
 	ftp://swrinde.nde.swri.edu/pub/png/src/zlib-*.zip
+  [GRR: or see http://www.cdrom.com/pub/png/pngcode.html]
 
   For the libtiff library there are two archives. The major with the
   latest version is:
 	ftp://ftp.sgi.com/graphics/libtiff/tiff-v3.4-tar.gz
+  [GRR: ftp://ftp.sgi.com/graphics/tiff/tiff-v3.4-tar.gz as of mid-1999]
 
   An older (v2.4) but recommendable version (see later) can be found
   as part of the PBMplus/netpbm package:
@@ -75,5 +77,44 @@
 
   If you have any feedback for me: gwillem@ntuvax.ntu.ac.sg is the way
   to go. Or try http://mht3.gintic.ntu.ac.sg:8000/wwwillem.html.
+  [GRR:  willem@schaik.com and http://www.schaik.com/ as of 1999]
 
 +----------------------------------------------------------------------+
+
+GRR NOTES:
+
+  I updated tiff2png 0.6 of May 1996 to version 0.7 in July 1999.  My
+  changes include the following:
+
+	- slightly generalized Makefile, including static-library build
+	- updated libpng interface
+	- new libpng error handler (avoids jmp_buf size mismatches between
+	   library and application)
+	- new usage() function
+	- PNG pHYs support (aspect ratio, resolution)
+	- optional new -faxpect option (only if compile with FAXPECT defined)
+
+  The last item is somewhat special-purpose, which is why it's ifdef'd.  At
+  least in my tests with efax 0.9, a Supra fax modem, and the various fax
+  machines to which I have access at work (including all of their "fineness"
+  options), *all* incoming faxes arrive with doubled horizontal resolution.
+  With -faxpect, tiff2png will detect if the aspect ratio is close to 2:1
+  and, if so, halve the horizontal resolution to give a near-1:1 aspect
+  ratio.  The algorithm is trivial:  if both neighboring pixels are white,
+  the result pixel is white; if both black, black; and if there's one of
+  each, the result is mid-level gray (127).  (This necessarily means the
+  output file is 2-bit palette-based, not grayscale, since only 8-bit PNG
+  grayscale includes the mid-level gray, and compression can't recover the
+  factor-of-four increase in pixel depth.)  The results look pretty decent.
+
+  Also note that even libtiff 3.4beta028 needs the OLDTIFF macro defined
+  (see the Makefile comments), at least in all the cases I was able to test.
+  I don't know what the difference is between my system and Willem's.
+
+  Finally, I've removed the (very) old libtiff from the tiff2png 0.7 tar
+  distribution; newer versions are available from the SGI web site mentioned
+  above (ftp://ftp.sgi.com/graphics/tiff/).
+
+Greg Roelofs
+16 September 1999
+newt@pobox.com
