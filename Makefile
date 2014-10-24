@@ -7,14 +7,6 @@ CC ?= gcc
 CFLAGS ?= -g -Wall -O3
 COPY = /bin/cp -p
 
-# TAKE CARE:  If you use the (very old) libtiff that comes with netpbm, which
-#             is v2.4, you may need to change this to -DOLD_LIBTIFF.  (The
-#             only difference is whether tiffcomp.h is included; it is not
-#             installed by default in newer versions of libtiff, but it may
-#             have been required for older versions.)
-#TIFF_VERSION = -DOLD_LIBTIFF
-TIFF_VERSION =
-
 # It appears that PHOTOMETRIC_MINISWHITE should always be inverted (which
 # makes sense), but if you find a class of TIFFs or a version of libtiff for
 # which that is *not* the case, try not defining INVERT_MINISWHITE.

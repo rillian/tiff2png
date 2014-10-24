@@ -84,9 +84,6 @@
 
 #include "tiff.h"
 #include "tiffio.h"
-#ifdef OLD_LIBTIFF
-#  include "tiffcomp.h"		/* not installed by default */
-#endif
 #include "png.h"
 
 #include "zlib.h"
@@ -1452,11 +1449,7 @@ main (argc, argv)
 
   if (verbose)
   {
-#ifdef OLD_LIBTIFF
-    fprintf (stderr, "tiff2png:  old libtiff (like v2.4) is used\n");
-#else
     fprintf (stderr, "tiff2png:  new libtiff (like v3.4) is used\n");
-#endif
   }
 
   /* get command-line arguments */
