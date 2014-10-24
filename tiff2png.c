@@ -30,6 +30,15 @@
 
 #define VERSION "0.91 of 12 September 2002"
 
+/* To do:  add testing/support for associated vs. unassociated alpha channel
+**         add support for iCCP profiles (and autodetect sRGB?)
+**       / add support for text annotations
+**       \ incorporate Willem's remaining 0.82 changes
+**         check various "XXX" items (non-contiguous tiles? MINISWHITE RGB? ...)
+**         create a man page
+**         [maybe switch to equivalent (OSS Certified) libpng or zlib license?]
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
