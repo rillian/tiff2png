@@ -15,54 +15,6 @@
 **         Patrick Naughton
 **         Marcel Wijkstra
 **
-** GRR REVISION HISTORY
-** ====================
-**
-** 19990713, 19990916 [version 0.7]:
-**    added usage(), pHYs support, error handler, -faxpect option; updated
-**    libpng code
-**
-** 20000126 [version 0.8]:
-**    added multi-file support, -destdir and -compression options; improved
-**    error-handling
-**
-** 20000213 [version 0.81]:
-**    changed -destdir to default to current directory (TenThumbs/SJT); fixed
-**    gcc warning
-**
-** 20001104 [version 0.81b]:
-**    incorporated Willem's 16-bit fix (GET_LINE, GET_STRIP, PUT_LINE macros)
-**
-** 20001112 [version 0.81c]:
-**    fixed (most of) rest of 16-bit bug (byteorder, 0xff); incorporated
-**    -invert option; added YCbCr, Log(L) support; added Win32 (MSVC) support
-**
-** 20020701 [version 0.9]:
-**    added support for contiguous tiled TIFFs (Frank Palmieri); added EMX
-**    wildcard support; added check/fix for (invalid?) 8-bit palette data in
-**    16-bit palettes (TenThumbs); removed C++ comments (Nelson Beebe); added
-**    more checks for malloc() failure
-**
-** 20020912 [version 0.91]:
-**    fixed sub-8-bps RGB[A] scaling bugs; fixed (and verified!--thanks to
-**    Rhett Sutphin) all(?) remaining 16-bps bugs
-**
-**    NOTE:  libtiff always returns 16-bit or larger samples in the native
-**           machine order when reading a TIFF, regardless of the TIFF image's
-**           actual endianness.  On x86 this means the samples are always
-**           little-endian and must be swapped for PNG; on PowerPC and 68k,
-**           no extra work is required.  There does not appear to be any way
-**           to alter this when reading TIFFs, although there are some flags
-**           to TIFFOpen() that support variations when _writing_ them.
-**
-** To do:  add testing/support for associated vs. unassociated alpha channel
-**         add support for iCCP profiles (and autodetect sRGB?)
-**       / add support for text annotations
-**       \ incorporate Willem's remaining 0.82 changes
-**         check various "XXX" items (non-contiguous tiles? MINISWHITE RGB? ...)
-**         create a man page
-**         [maybe switch to equivalent (OSS Certified) libpng or zlib license?]
-**
 ** Permission to use, copy, modify, and distribute this software and its
 ** documentation for any purpose and without fee is hereby granted,
 ** provided that the above copyright notice appear in all copies and that
