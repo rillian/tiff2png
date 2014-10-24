@@ -11,12 +11,10 @@ COPY = /bin/cp -p
 # makes sense), but if you find a class of TIFFs or a version of libtiff for
 # which that is *not* the case, try not defining INVERT_MINISWHITE.
 #
-# FAXPECT is a custom conversion option for 2:1 stretched faxes. [GRR 19990713]
-#
 # DEFAULT_DESTDIR_IS_CURDIR will put all converted images into the current
 # directory (.) if the -destdir option is given without an argument.
 #
-OPTION_FLAGS = -DINVERT_MINISWHITE -DFAXPECT -DDEFAULT_DESTDIR_IS_CURDIR
+OPTION_FLAGS = -DINVERT_MINISWHITE -DDEFAULT_DESTDIR_IS_CURDIR
 
 PREFIX = /usr/local
 

@@ -127,9 +127,7 @@ static void usage (int rc);
 static void tiff2png_error_handler (png_structp png_ptr, png_const_charp msg);
 int tiff2png (char *tiffname, char *pngname, int verbose, int force,
               int interlace_type, int png_compression_level, int invert,
-#ifdef FAXPECT
               int faxpect_option,
-#endif
               double gamma);
 
 
@@ -202,9 +200,7 @@ static void usage (rc)
   fprintf (stderr,
     "Usage:  tiff2png [-verbose] [-force] [-destdir <dir>] [-compression <val>]"
     "\n                 [-gamma <val>] [-interlace] [-invert] "
-#ifdef FAXPECT
     "[-faxpect] "
-#endif
     "<file> [...]\n\n"
     "Read each <file> and convert to PNG format (by default, in same directory "
     "as\n"
@@ -216,10 +212,8 @@ static void usage (rc)
     "   -gamma        write PNGs with specified gamma <val> (e.g., 0.45455)\n"
     "   -interlace    write interlaced PNGs\n"
     "   -invert       invert grayscale images (swaps black/white)\n");
-#ifdef FAXPECT
   fprintf (stderr,
     "   -faxpect      convert fax with 2:1 aspect ratio to square pixels\n");
-#endif
 
   exit (rc);
 }
@@ -258,16 +252,11 @@ static void tiff2png_error_handler (png_ptr, msg)
 /*----------------------------------------------------------------------------*/
 
 int
-#ifndef FAXPECT
-tiff2png (tiffname, pngname, verbose, force, interlace_type,
-          png_compression_level, invert, gamma)
-#else
 tiff2png (tiffname, pngname, verbose, force, interlace_type,
           png_compression_level, _invert, faxpect_option, gamma)
-  int faxpect_option;		/* user gave -faxpect option */
-#endif
   char *tiffname, *pngname;
   int verbose, force, interlace_type, png_compression_level, _invert;
+  int faxpect_option;
   double gamma;
 {
   static TIFF *tif = NULL;				/* TIFF */
@@ -324,9 +313,7 @@ tiff2png (tiffname, pngname, verbose, force, interlace_type,
   unsigned short *bluecolormap;
   static int have_res = FALSE;
   static int invert;
-#ifdef FAXPECT
   int faxpect;
-#endif
   long i, n;
 
 
@@ -786,7 +773,6 @@ tiff2png (tiffname, pngname, verbose, force, interlace_type,
   if (verbose)
     fprintf (stderr, "tiff2png:  bit depth = %d\n", bit_depth);
 
-#ifdef FAXPECT
   faxpect = faxpect_option;
   if (faxpect && (!have_res || ratio < 1.90 || ratio > 2.10))
   {
@@ -821,7 +807,6 @@ tiff2png (tiffname, pngname, verbose, force, interlace_type,
       fprintf (stderr, "tiff2png:  new bit depth = %d\n", bit_depth);
     }
   }
-#endif
 
   /* put parameter info in png-chunks */
 
@@ -1158,7 +1143,6 @@ tiff2png (tiffname, pngname, verbose, force, interlace_type,
 
             } /* end switch (bps) */
 	  }
-#ifdef FAXPECT
           /* note that this actually converts 1-bit grayscale to 2-bit indexed
            * data, where 0 = black, 1 = half-gray (127), and 2 = white */
           if (faxpect)
@@ -1173,7 +1157,6 @@ tiff2png (tiffname, pngname, verbose, force, interlace_type,
 	      p_png2 += 2;
             }
           }
-#endif
 	  break;
 
 /*
@@ -1435,9 +1418,7 @@ main (argc, argv)
   int verbose = FALSE;
   int force = FALSE;
   int invert = FALSE;
-#ifdef FAXPECT
   int faxpect = FALSE;
-#endif
   double gamma = -1.0;
 
 
@@ -1502,10 +1483,8 @@ main (argc, argv)
       interlace_type = PNG_INTERLACE_ADAM7;
     else if (strncmp (argv[argn], "-invert", 4) == 0)
       invert = TRUE;
-#ifdef FAXPECT
     else if (strncmp (argv[argn], "-faxpect", 3) == 0)
       faxpect = TRUE;
-#endif
     else
       usage (1);
     argn++;
@@ -1570,13 +1549,8 @@ main (argc, argv)
     else
       strcpy(pngname+len, ".png");
 
-#ifdef FAXPECT
     tiff2png(tiffname, pngname, verbose, force, interlace_type,
       compression_level, invert, faxpect, gamma);
-#else
-    tiff2png(tiffname, pngname, verbose, force, interlace_type,
-      compression_level, invert, gamma);
-#endif
 
     free(pngname);
     argn++;
