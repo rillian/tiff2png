@@ -31,6 +31,9 @@ OBJS = $(SRCS:%.c=%.o)
 tiff2png: tiff2png.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
+check: all
+	./tiff2png -h
+
 clean:
 	$(RM) $(OBJS) tiff2png
 
