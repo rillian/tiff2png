@@ -202,9 +202,14 @@ static void usage (rc)
     "\n                 [-gamma <val>] [-interlace] [-invert] "
     "[-faxpect] "
     "<file> [...]\n\n"
-    "Read each <file> and convert to PNG format (by default, in same directory "
-    "as\n"
-    "corresponding TIFF).  Suffixes will be changed from .tif or .tiff to .png."
+    "Read each <file> and convert to PNG format"
+#ifdef DEFAULT_DESTDIR_IS_CURDIR
+    " (in the current directory).\n"
+#else
+    " (by default, in same directory as\n"
+    "the corresponding TIFF)."
+#endif
+    "  Suffixes will be changed from .tif or .tiff to .png."
     "\n\n"
     "   -force        overwrite existing PNGs if they exist\n"
     "   -destdir      create PNGs in destination directory <dir>\n"
