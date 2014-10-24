@@ -1,14 +1,11 @@
 # Makefile for tiff2png
 # Copyright 1996 Willem van Schaik
 # Copyright 2002 Greg Roelofs
+# Copyright 2014 Ralph Giles
 
-#CC=cc
-CC=gcc
-OPTIMFLAGS = -O3 
-DEBUGFLAGS = -g -Wall -W
-#COPY=cp
-COPY=/bin/cp -p
-DEL=/bin/rm -f
+CC ?= gcc
+CFLAGS ?= -g -Wall -O3
+COPY = /bin/cp -p
 
 # TAKE CARE:  If you use the (very old) libtiff that comes with netpbm, which
 #             is v2.4, you may need to change this to -DOLD_LIBTIFF.  (The
@@ -29,72 +26,23 @@ TIFF_VERSION =
 #
 OPTION_FLAGS = -DINVERT_MINISWHITE -DFAXPECT -DDEFAULT_DESTDIR_IS_CURDIR
 
+PREFIX = /usr/local
 
-# change to match your directories (you see the ./ and ../ ?!?!)
-#LIBTIFF=/usr/lib
-#LIBTIFF=/usr/local/lib
-#LIBTIFF=../libtiff/libtiff
-#LIBTIFF=../libgr2/tiff/libtiff
-#LIBTIFF=../netpbm/libtiff
-#TIFFINC=/usr/local/include
-#TIFFINC=$(LIBTIFF)
+CFLAGS += $(TIFF_VERSION) $(OPTION_FLAGS)
+LIBS = -ltiff -ljpeg -lpng -lz -lm
 
-# newer libtiffs (can) use libjpeg, too
-#LIBJPEG=/usr/lib
-#LIBJPEG=/usr/local/lib
-#LIBJPEG=../libjpeg
-#LIBJPEG=../libgr2/jpeg
+all: tiff2png
 
-#LIBPNG=/usr/lib
-#LIBPNG=/usr/local/lib
-#LIBPNG=../libpng
-#LIBPNG=../libgr2/png
-#PNGINC=/usr/local/include
-#PNGINC=$(LIBPNG)
-
-#ZLIB=/usr/lib
-#ZLIB=/usr/local/lib
-#ZLIB=../zlib
-#ZINC=/usr/local/include
-#ZINC=$(ZLIB)
-
-INSTALL=/usr/local
-
-CFLAGS=$(TIFF_VERSION) $(OPTION_FLAGS) $(OPTIMFLAGS) $(DEBUGFLAGS)
-LDFLAGS=-L. \
-	-ltiff \
-	-ljpeg \
-	-lpng \
-	-lz \
-	-lm
-SLDFLAGS=-L. \
-	$(LIBTIFF)/libtiff.a \
-	$(LIBJPEG)/libjpeg.a \
-	$(LIBPNG)/libpng.a \
-	$(ZLIB)/libz.a \
-	-lm
-
-OBJS = tiff2png.o
-
-# default is dynamic only (or mixed dynamic/static, depending on installed libs)
-default: tiff2png
-
-# it's nice to have a choice, though
-all: tiff2png tiff2png-static
+SRCS = tiff2png.c
+OBJS = $(SRCS:%.c=%.o)
 
 tiff2png: tiff2png.o
-	$(CC) -o tiff2png tiff2png.o $(LDFLAGS)
-
-tiff2png-static: tiff2png.o
-	$(CC) -o tiff2png-static tiff2png.o $(SLDFLAGS)
-
-install: all
-	$(COPY) tiff2png $(INSTALL)/bin
-#	$(COPY) tiff2png.1 $(INSTALL)/man/man1
+	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 clean:
-	$(DEL) *.o tiff2png tiff2png-static
+	$(RM) $(OBJS) tiff2png
 
-# leave this line empty
+install: all
+	$(COPY) tiff2png $(INSTALL)/bin/
 
-$(OBJS):
+.PHONY: all clean install
