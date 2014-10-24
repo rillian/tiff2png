@@ -32,43 +32,40 @@ OPTION_FLAGS = -DINVERT_MINISWHITE -DFAXPECT -DDEFAULT_DESTDIR_IS_CURDIR
 
 # change to match your directories (you see the ./ and ../ ?!?!)
 #LIBTIFF=/usr/lib
-LIBTIFF=/usr/local/lib
+#LIBTIFF=/usr/local/lib
 #LIBTIFF=../libtiff/libtiff
 #LIBTIFF=../libgr2/tiff/libtiff
 #LIBTIFF=../netpbm/libtiff
-TIFFINC=/usr/local/include
+#TIFFINC=/usr/local/include
 #TIFFINC=$(LIBTIFF)
 
 # newer libtiffs (can) use libjpeg, too
-LIBJPEG=/usr/lib
+#LIBJPEG=/usr/lib
 #LIBJPEG=/usr/local/lib
 #LIBJPEG=../libjpeg
 #LIBJPEG=../libgr2/jpeg
 
 #LIBPNG=/usr/lib
 #LIBPNG=/usr/local/lib
-LIBPNG=../libpng
+#LIBPNG=../libpng
 #LIBPNG=../libgr2/png
 #PNGINC=/usr/local/include
-PNGINC=$(LIBPNG)
+#PNGINC=$(LIBPNG)
 
 #ZLIB=/usr/lib
 #ZLIB=/usr/local/lib
-ZLIB=../zlib
+#ZLIB=../zlib
 #ZINC=/usr/local/include
-ZINC=$(ZLIB)
+#ZINC=$(ZLIB)
 
 INSTALL=/usr/local
 
-CFLAGS=$(TIFF_VERSION) $(OPTION_FLAGS) $(OPTIMFLAGS) $(DEBUGFLAGS) \
-	-I$(TIFFINC) \
-	-I$(PNGINC) \
-	-I$(ZINC)
+CFLAGS=$(TIFF_VERSION) $(OPTION_FLAGS) $(OPTIMFLAGS) $(DEBUGFLAGS)
 LDFLAGS=-L. \
-	-L$(LIBTIFF) -ltiff \
-	-L$(LIBJPEG) -ljpeg \
-	-L$(LIBPNG) -lpng \
-	-L$(ZLIB) -lz \
+	-ltiff \
+	-ljpeg \
+	-lpng \
+	-lz \
 	-lm
 SLDFLAGS=-L. \
 	$(LIBTIFF)/libtiff.a \
