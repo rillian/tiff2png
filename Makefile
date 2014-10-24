@@ -11,10 +11,10 @@ COPY = /bin/cp -p
 # makes sense), but if you find a class of TIFFs or a version of libtiff for
 # which that is *not* the case, try not defining INVERT_MINISWHITE.
 #
-# DEFAULT_DESTDIR_IS_CURDIR will put all converted images into the current
-# directory (.) if the -destdir option is given without an argument.
+# DESTDIR_IS_CURDIR will put all converted images into the current directory
+# by default or if the -destdir option is given without an argument.
 #
-OPTION_FLAGS = -DINVERT_MINISWHITE -DDEFAULT_DESTDIR_IS_CURDIR
+OPTION_FLAGS = -DINVERT_MINISWHITE -DDESTDIR_IS_CURDIR
 
 PREFIX = /usr/local
 

@@ -203,7 +203,7 @@ static void usage (rc)
     "[-faxpect] "
     "<file> [...]\n\n"
     "Read each <file> and convert to PNG format"
-#ifdef DEFAULT_DESTDIR_IS_CURDIR
+#ifdef DESTDIR_IS_CURDIR
     " (in the current directory).\n"
 #else
     " (by default, in same directory as\n"
@@ -1496,7 +1496,7 @@ main (argc, argv)
   }
 
 
-#ifdef DEFAULT_DESTDIR_IS_CURDIR
+#ifdef DESTDIR_IS_CURDIR
   /* SJT: I like always writing to the current directory. */
   if (destdir == NULL)
     destdir = ".";
