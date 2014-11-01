@@ -3,6 +3,9 @@
 # Copyright 2002 Greg Roelofs
 # Copyright 2014 Ralph Giles
 
+PACKAGE = tiff2png
+VERSION = 0.92-git
+
 CC ?= gcc
 CFLAGS ?= -g -Wall -O3
 COPY = /bin/cp -p
@@ -26,6 +29,8 @@ all: tiff2png
 SRCS = tiff2png.c
 LIBS = -ltiff -ljpeg -lpng -lz -lm
 
+EXTRA_DIST = README CHANGES Makefile.w32
+
 OBJS = $(SRCS:%.c=%.o)
 
 tiff2png: tiff2png.o
@@ -40,4 +45,13 @@ clean:
 install: all
 	$(COPY) tiff2png $(INSTALL)/bin/
 
-.PHONY: all clean install
+dist: $(PACKAGE)-$(VERSION).tar.gz
+
+$(PACKAGE)-$(VERSION).tar.gz: Makefile $(SRCS) $(EXTRA_DIST)
+	-$(RM) -r $(PACKAGE)-$(VERSION)
+	mkdir $(PACKAGE)-$(VERSION)
+	cp $^ $(PACKAGE)-$(VERSION)/
+	tar czf $@ $(PACKAGE)-$(VERSION)/*
+	$(RM) -r $(PACKAGE)-$(VERSION)
+
+.PHONY: all clean install dist
