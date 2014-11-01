@@ -45,7 +45,7 @@ install: all
 	$(COPY) tiff2png $(INSTALL)/bin/
 
 GIT_VERSION = $(shell git describe --always --tags --match 'v*' --dirty)
-VERSION = $(patsubst v%,%,$(GIT_VERSION))
+VERSION = $(or $(patsubst v%,%,$(GIT_VERSION)),unknown)
 DISTDIR = $(PACKAGE)-$(VERSION)
 
 dist: $(DISTDIR).tar.gz
