@@ -22,6 +22,10 @@ CFLAGS += -DINVERT_MINISWHITE
 
 CFLAGS += -DDESTDIR_IS_CURDIR
 
+GIT_VERSION := $(shell git describe --always --tags --match 'v*' --dirty)
+VERSION := $(or $(patsubst v%,%,$(GIT_VERSION)),unknown)
+
+CFLAGS += -DVERSION=\"$(VERSION)\"
 
 all: tiff2png
 
@@ -44,8 +48,7 @@ clean:
 install: all
 	$(COPY) tiff2png $(INSTALL)/bin/
 
-GIT_VERSION := $(shell git -q describe --always --tags --match 'v*' --dirty)
-VERSION := $(or $(patsubst v%,%,$(GIT_VERSION)),unknown)
+
 DISTDIR := $(PACKAGE)-$(VERSION)
 
 dist: $(DISTDIR).tar.gz

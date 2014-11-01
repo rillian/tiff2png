@@ -4,8 +4,6 @@
 ** Copyright 1996,2000 Willem van Schaik, Calgary (willem@schaik.com)
 ** Copyright 1999-2002 Greg Roelofs (newt@pobox.com)
 **
-** [see VERSION macro below for version and date]
-**
 ** Lots of material was stolen from libtiff, tifftopnm, pnmtopng, which
 ** programs had also done a fair amount of "borrowing", so the credit for
 ** this program goes besides the author also to:
@@ -28,8 +26,6 @@
 ** other special, indirect and consequential damages.
 */
 
-#define VERSION "0.91 of 12 September 2002"
-
 /* To do:  add testing/support for associated vs. unassociated alpha channel
 **         add support for iCCP profiles (and autodetect sRGB?)
 **       / add support for text annotations
@@ -38,6 +34,12 @@
 **         create a man page
 **         [maybe switch to equivalent (OSS Certified) libpng or zlib license?]
 */
+
+/* We expect the build system to define an appropriate version. */
+#ifndef VERSION
+/* If not, at least include the compile time. */
+#define VERSION "unknown development version " __DATE__
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
