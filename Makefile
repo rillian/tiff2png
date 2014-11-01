@@ -44,15 +44,17 @@ clean:
 install: all
 	$(COPY) tiff2png $(INSTALL)/bin/
 
-VERSION = $(shell git describe --always --tags --match 'v*' --dirty)
+GIT_VERSION = $(shell git describe --always --tags --match 'v*' --dirty)
+VERSION = $(patsubst v%,%,$(GIT_VERSION))
+DISTDIR = $(PACKAGE)-$(VERSION)
 
-dist: $(PACKAGE)-$(VERSION).tar.gz
+dist: $(DISTDIR).tar.gz
 
-$(PACKAGE)-$(VERSION).tar.gz: Makefile $(SRCS) $(EXTRA_DIST)
-	-$(RM) -r $(PACKAGE)-$(VERSION)
-	mkdir $(PACKAGE)-$(VERSION)
-	cp $^ $(PACKAGE)-$(VERSION)/
-	tar czf $@ $(PACKAGE)-$(VERSION)/*
-	$(RM) -r $(PACKAGE)-$(VERSION)
+$(DISTDIR).tar.gz: Makefile $(SRCS) $(EXTRA_DIST)
+	-$(RM) -r $(DISTDIR)
+	mkdir $(DISTDIR)
+	cp $^ $(DISTDIR)/
+	tar czf $@ $(DISTDIR)/*
+	$(RM) -r $(DISTDIR)
 
 .PHONY: all clean install dist
