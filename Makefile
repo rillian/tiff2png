@@ -4,7 +4,6 @@
 # Copyright 2014 Ralph Giles
 
 PACKAGE = tiff2png
-VERSION = 0.92-git
 
 CC ?= gcc
 CFLAGS ?= -g -Wall -O3
@@ -44,6 +43,8 @@ clean:
 
 install: all
 	$(COPY) tiff2png $(INSTALL)/bin/
+
+VERSION = $(shell git describe --always --tags --match 'v*' --dirty)
 
 dist: $(PACKAGE)-$(VERSION).tar.gz
 
