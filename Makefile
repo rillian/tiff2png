@@ -3,13 +3,13 @@
 # Copyright 2002 Greg Roelofs
 # Copyright 2014 Ralph Giles
 
-PACKAGE = tiff2png
+PACKAGE := tiff2png
 
 CC ?= gcc
 CFLAGS ?= -g -Wall -O3
-COPY = /bin/cp -p
+COPY := /bin/cp -p
 
-PREFIX = /usr/local
+PREFIX ?= /usr/local
 
 # It appears that PHOTOMETRIC_MINISWHITE should always be inverted (which
 # makes sense), but if you find a class of TIFFs or a version of libtiff for
@@ -25,12 +25,12 @@ CFLAGS += -DDESTDIR_IS_CURDIR
 
 all: tiff2png
 
-SRCS = tiff2png.c
-LIBS = -ltiff -ljpeg -lpng -lz -lm
+SRCS := tiff2png.c
+LIBS := -ltiff -ljpeg -lpng -lz -lm
 
-EXTRA_DIST = README CHANGES Makefile.w32
+EXTRA_DIST := README CHANGES Makefile.w32
 
-OBJS = $(SRCS:%.c=%.o)
+OBJS := $(SRCS:%.c=%.o)
 
 tiff2png: tiff2png.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
@@ -44,9 +44,9 @@ clean:
 install: all
 	$(COPY) tiff2png $(INSTALL)/bin/
 
-GIT_VERSION = $(shell git describe --always --tags --match 'v*' --dirty)
-VERSION = $(or $(patsubst v%,%,$(GIT_VERSION)),unknown)
-DISTDIR = $(PACKAGE)-$(VERSION)
+GIT_VERSION := $(shell git -q describe --always --tags --match 'v*' --dirty)
+VERSION := $(or $(patsubst v%,%,$(GIT_VERSION)),unknown)
+DISTDIR := $(PACKAGE)-$(VERSION)
 
 dist: $(DISTDIR).tar.gz
 
