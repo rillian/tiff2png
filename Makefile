@@ -4,6 +4,7 @@
 # Copyright 2014 Ralph Giles
 
 PACKAGE := tiff2png
+VERSION := 0.92
 
 CC ?= gcc
 CFLAGS ?= -g -Wall -O3
@@ -23,7 +24,7 @@ CFLAGS += -DINVERT_MINISWHITE
 CFLAGS += -DDESTDIR_IS_CURDIR
 
 GIT_VERSION := $(shell git describe --always --tags --match 'v*' --dirty)
-VERSION := $(or $(patsubst v%,%,$(GIT_VERSION)),unknown)
+VERSION := $(or $(patsubst v%,%,$(GIT_VERSION)),$(VERSION),unknown)
 
 CFLAGS += -DVERSION=\"$(VERSION)\"
 
