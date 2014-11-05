@@ -61,4 +61,10 @@ $(DISTDIR).tar.gz: Makefile $(SRCS) $(EXTRA_DIST)
 	tar czf $@ $(DISTDIR)/*
 	$(RM) -r $(DISTDIR)
 
-.PHONY: all clean install dist
+distcheck: dist
+	tar xf $(DISTDIR).tar.gz
+	cd $(DISTDIR) && make check && make dist
+	$(RM) -r $(DISTDIR)
+	@echo $(DISTDIR).tar.gz is ready to distribute
+
+.PHONY: all clean install dist distcheck
