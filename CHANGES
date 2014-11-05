@@ -4,6 +4,14 @@ tiff2png
 Converts a Tagged Image File Format (TIFF) file into a
 Portable Network Graphics (PNG) file.
 
+5 November 2014 - version 0.92:
+
+  Add zlib.h include, which is no longer supplied by png.h.
+
+  Remove non-default compile-time configurations. Fixed various warnings.
+
+  Rewrote makefile and documentation to match modern conventions.
+  Removed the static target. The build now requires GNU make.
 
 12 September 2002 - version 0.91:
 
