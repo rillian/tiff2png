@@ -8,7 +8,6 @@ VERSION := 0.92
 
 CC ?= gcc
 CFLAGS ?= -g -Wall -O3
-COPY := /bin/cp -p
 
 PREFIX ?= /usr/local
 
@@ -50,7 +49,7 @@ BINDIR := $(PREFIX)/bin
 
 install: all
 	mkdir -p $(BINDIR)
-	$(COPY) tiff2png $(BINDIR)/
+	cp tiff2png $(BINDIR)/
 
 
 DISTDIR := $(PACKAGE)-$(VERSION)
