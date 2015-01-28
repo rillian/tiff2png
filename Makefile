@@ -46,8 +46,11 @@ check: all
 clean:
 	$(RM) $(OBJS) tiff2png
 
+BINDIR := $(PREFIX)/bin
+
 install: all
-	$(COPY) tiff2png $(INSTALL)/bin/
+	mkdir -p $(BINDIR)
+	$(COPY) tiff2png $(BINDIR)/
 
 
 DISTDIR := $(PACKAGE)-$(VERSION)
