@@ -1,0 +1,24 @@
+name: Makefile build
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 0 2 * *'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: build
+        run: make
+
+      - name: test
+        run: make check
+
+      - name: distcheck
+        run: make distcheck
