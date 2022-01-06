@@ -1,0 +1,12 @@
+default:
+  tags:
+    - docker
+  # Image from https://hub.docker.com/_/gcc/ based on Debian.
+  image: gcc:9
+
+makefile:
+  stage: build
+  script:
+    - make
+    - make check
+    - make distcheck
